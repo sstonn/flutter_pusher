@@ -22,11 +22,11 @@ class Pusher {
   static const _eventChannel =
       const EventChannel('plugins.indoor.solutions/pusherStream');
 
-  static void Function(ConnectionStateChange) _onConnectionStateChange;
-  static void Function(ConnectionError) _onError;
+  static void Function(ConnectionStateChange?)? _onConnectionStateChange;
+  static void Function(ConnectionError?)? _onError;
 
-  static Map<String, void Function(Event)> eventCallbacks =
-      Map<String, void Function(Event)>();
+  static Map<String, void Function(Event?)?> eventCallbacks =
+      Map<String, void Function(Event?)?>();
 
   /// Setup app key and options
   static Future init(
@@ -50,8 +50,8 @@ class Pusher {
 
   /// Connect the client to pusher
   static Future connect({
-    void Function(ConnectionStateChange) onConnectionStateChange,
-    void Function(ConnectionError) onError,
+    void Function(ConnectionStateChange?)? onConnectionStateChange,
+    void Function(ConnectionError?)? onError,
   }) async {
     _onConnectionStateChange = onConnectionStateChange;
     _onError = onError;
@@ -76,7 +76,7 @@ class Pusher {
   }
 
   static Future _trigger(
-      String channelName, String eventName, String data) async {
+      String? channelName, String eventName, String data) async {
     final bindArgs = jsonEncode(BindArgs(
       channelName: channelName,
       eventName: eventName,
@@ -89,7 +89,7 @@ class Pusher {
   static Future _bind(
     String channelName,
     String eventName, {
-    void Function(Event) onEvent,
+    void Function(Event?)? onEvent,
   }) async {
     final bindArgs = jsonEncode(BindArgs(
       channelName: channelName,
@@ -115,17 +115,17 @@ class Pusher {
 
     if (message.isEvent) {
       var callback =
-          eventCallbacks[message.event.channel + message.event.event];
+          eventCallbacks[message.event!.channel! + message.event!.event!];
       if (callback != null) {
         callback(message.event);
       }
     } else if (message.isConnectionStateChange) {
       if (_onConnectionStateChange != null) {
-        _onConnectionStateChange(message.connectionStateChange);
+        _onConnectionStateChange!(message.connectionStateChange);
       }
     } else if (message.isConnectionError) {
       if (_onError != null) {
-        _onError(message.connectionError);
+        _onError!(message.connectionError);
       }
     }
   }
@@ -133,9 +133,9 @@ class Pusher {
 
 @JsonSerializable()
 class InitArgs {
-  final String appKey;
-  final PusherOptions options;
-  final bool isLoggingEnabled;
+  final String? appKey;
+  final PusherOptions? options;
+  final bool? isLoggingEnabled;
 
   InitArgs(this.appKey, this.options, {this.isLoggingEnabled = false});
 
@@ -147,9 +147,9 @@ class InitArgs {
 
 @JsonSerializable()
 class BindArgs {
-  final String channelName;
-  final String eventName;
-  final String data;
+  final String? channelName;
+  final String? eventName;
+  final String? data;
 
   BindArgs({this.channelName, this.eventName, this.data});
 
@@ -161,12 +161,12 @@ class BindArgs {
 
 @JsonSerializable(includeIfNull: false)
 class PusherOptions {
-  final PusherAuth auth;
-  final String cluster;
-  final String host;
-  final int port;
-  final bool encrypted;
-  final int activityTimeout;
+  final PusherAuth? auth;
+  final String? cluster;
+  final String? host;
+  final int? port;
+  final bool? encrypted;
+  final int? activityTimeout;
 
   PusherOptions({
     this.auth,
@@ -185,8 +185,8 @@ class PusherOptions {
 
 @JsonSerializable()
 class PusherAuth {
-  final String endpoint;
-  final Map<String, String> headers;
+  final String? endpoint;
+  final Map<String, String>? headers;
 
   PusherAuth(
     this.endpoint, {
@@ -201,8 +201,8 @@ class PusherAuth {
 
 @JsonSerializable()
 class ConnectionStateChange {
-  final String currentState;
-  final String previousState;
+  final String? currentState;
+  final String? previousState;
 
   ConnectionStateChange({this.currentState, this.previousState});
 
@@ -214,9 +214,9 @@ class ConnectionStateChange {
 
 @JsonSerializable()
 class ConnectionError {
-  final String message;
-  final String code;
-  final String exception;
+  final String? message;
+  final String? code;
+  final String? exception;
 
   ConnectionError({this.message, this.code, this.exception});
 
@@ -228,9 +228,9 @@ class ConnectionError {
 
 @JsonSerializable()
 class Event {
-  final String channel;
-  final String event;
-  final String data;
+  final String? channel;
+  final String? event;
+  final String? data;
 
   Event({this.channel, this.event, this.data});
 
@@ -240,24 +240,24 @@ class Event {
 }
 
 class Channel {
-  final String name;
+  final String? name;
 
   Channel({this.name});
 
   /// Bind to listen for events sent on the given channel
-  Future bind(String eventName, void Function(Event) onEvent) async {
-    await Pusher._bind(name, eventName, onEvent: onEvent);
+  Future bind(String eventName, void Function(Event?) onEvent) async {
+    await Pusher._bind(name!, eventName, onEvent: onEvent);
   }
 
   Future unbind(String eventName) async {
-    await Pusher._unbind(name, eventName);
+    await Pusher._unbind(name!, eventName);
   }
 
   /// Trigger [eventName] (will be prefixed with "client-" in case you have not) for [Channel].
   ///
   /// Client events can only be triggered on private and presence channels because they require authentication
   /// You can only trigger a client event once a subscription has been successfully registered with Channels.
-  Future trigger(String eventName, {String data}) async {
+  Future trigger(String eventName, {String? data}) async {
     if (!eventName.startsWith('client-')) {
       eventName = "client-$eventName";
     }
@@ -268,9 +268,9 @@ class Channel {
 
 @JsonSerializable()
 class PusherEventStreamMessage {
-  final Event event;
-  final ConnectionStateChange connectionStateChange;
-  final ConnectionError connectionError;
+  final Event? event;
+  final ConnectionStateChange? connectionStateChange;
+  final ConnectionError? connectionError;
 
   bool get isEvent => event != null;
 
